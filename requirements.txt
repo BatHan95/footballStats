@@ -1,0 +1,6 @@
+requests
+pandas
+datetime
+math
+psycopg2
+json
