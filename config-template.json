@@ -1,0 +1,8 @@
+{
+    "main_rds_host": "",
+    "main_rds_password": "",
+    "main_rds_port": "",
+    "main_rds_username": "",
+    "main_rds_stats_db_name": "",
+    "main_rds_region": ""
+}
