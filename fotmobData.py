@@ -201,10 +201,10 @@ def generateBets(df):
     for index, row in df.iterrows():
         if row['statName'] != 'Yellow cards':
             stat = round(row['avg']-0.65)
-            max = math.ceil((row['max'] * 5 + row['avg'] * 2)/7)
+            max = math.ceil((row['max'] * 6 + row['avg'] * 2)/8)
             betList.append([row['matchId'], row['teamName'], row['homeOrAway'], row['statName'], stat, max])
         if row['statName'] == 'Yellow cards':
-            bookingPoints = (row['min'] * 3 + row['avg'] * 5)/8 * 10
+            bookingPoints = (row['min'] * 3 + row['avg'] * 7)/10 * 10
             bookingPoints = bookingPoints - (bookingPoints%10)
             betList.append([row['matchId'], row['teamName'], row['homeOrAway'], 'Booking points', bookingPoints, bookingPoints])
     betDf = pd.DataFrame(betList, columns= ['matchId', 'teamName', 'homeOrAway', 'statName', 'stat', 'max'])
