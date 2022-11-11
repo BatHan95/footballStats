@@ -1,0 +1,26 @@
+
+service: betbuilder
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  region: eu-west-2
+  runtime: python3.8
+  stage: production
+  profile: betbuilder-admin
+
+functions:
+  betbuilder:
+    handler: handler.run
+    layers:
+      # py 3.8:
+      - arn:aws:lambda:eu-west-2:736304223463:layer:psycopg2:1
+
+
+# plugins:
+#   - serverless-python-requirements
+
+# custom:
+#   pythonRequirements:
+#     dockerizePip: non-linux

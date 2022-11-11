@@ -1,0 +1,16 @@
+{
+
+    "matchId": {
+        "teams": {
+            "home": "",
+            "away": ""
+        },
+        "league": "league for excel",
+        "date": "date for excel",
+        "bets": [
+            "",
+            ""
+        ]
+    }
+
+}
