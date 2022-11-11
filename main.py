@@ -16,6 +16,8 @@ def updateTeams():
 
 def getBetsForTomorrow():
     matchesDf = pd.DataFrame(fotmobData.getMatchesTomorrow(), columns = fotmobData.matchesCols).drop_duplicates()
+    bets = []
     for index, row in matchesDf.iterrows():
-        finalStatsDf = pd.DataFrame(rdsConnector.rdsSelect(row, ['Total shots', 'Corners', 'Yellow cards', 'Shots on target']), columns = ['matchId', 'teamName', 'homeOrAway', 'statName', 'min', 'max', 'avg'])
-        fotmobData.generateBets(finalStatsDf)
+        finalStatsDf = pd.DataFrame(rdsConnector.rdsSelect(row, ['Total shots', 'Corners', 'Yellow cards', 'Shots on target']), columns = ['matchId', 'competitionId', 'matchDate', 'teamName', 'homeOrAway', 'statName', 'min', 'max', 'avg'])
+        bets.append(fotmobData.generateBets(finalStatsDf))
+    return {"matches": bets}
