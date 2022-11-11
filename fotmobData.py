@@ -123,8 +123,8 @@ def getLeaguesMatches(leagues):
 
 def getMatchesInDateRange(startDate, endDate):
     print('Getting matches between ' + str(startDate) + ' and ' + str(endDate) + ' for ' + ' & '.join(leagueNameList))
-    start = datetime.datetime.strptime(startDate, "%Y-%m-%d")
-    end = datetime.datetime.strptime(endDate, "%Y-%m-%d")
+    start = startDate
+    end = endDate
     matchDay = start
     matchData = []
     while matchDay <= end:
@@ -136,7 +136,7 @@ def getMatchesInDateRange(startDate, endDate):
             print('Got ' + str(len(matchList)) + ' match(es) on ' + str(matchDay - datetime.timedelta(days=1)))
     if matchData != []:
         matchData = [item for sublist in matchData for item in sublist]
-        print('Got a total of ' + str(len(matchData)) + ' matches between ' + startDate + ' and ' + endDate + ' for ' + ' & '.join(leagueNameList))
+        print('Got a total of ' + str(len(matchData)) + ' matches between ' + str(startDate) + ' and ' + str(endDate) + ' for ' + ' & '.join(leagueNameList))
         return matchData
 
 
