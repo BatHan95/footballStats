@@ -29,6 +29,7 @@ def run(event, context):
     if (event['action'] == 'refresh'):
         # Run refresh logic
         main.refresh()
+        updateText = 'Refresh Successful'
         status = True
     elif (event['action'] == 'getBetsForTomorrow'):
         # Run get bets logic
