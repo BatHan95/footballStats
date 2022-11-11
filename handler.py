@@ -1,5 +1,7 @@
 import json
 import main
+import logic.parsers as parser
+
 API_KEY = json.loads(open('config.json', 'r').read())["API_KEY"]
 
 
@@ -30,8 +32,12 @@ def run(event, context):
         status = True
     elif (event['action'] == 'getBetsForTomorrow'):
         # Run get bets logic
-        main.getBetsForTomorrow()
+        updateText = main.getBetsForTomorrow()
         status = True
+    elif (event['action'] == 'getBetsForTomorrow_email'):
+        response_raw = main.getBetsForTomorrow()
+        response = parser.parse_bets_for_email(response_raw)
+        return response
     else:
         raise Exception('No action provided')
 
@@ -41,3 +47,8 @@ def run(event, context):
     }
 
     return response
+
+run({
+  "api_key": "HhwhnMfuqhWnKQ@@b@7QI!T12H5JPqA4oKZrOy^B8UtVC$HbnejIPgj5jIvKJP3KAqS4oxe$^ULdxRlE2xzBuyHY9KhRc%2MSVJ",
+  "action": "getBetsForTomorrow_email"
+},{})
