@@ -122,7 +122,7 @@ def getLeaguesMatches(leagues):
 
 
 def getMatchesInDateRange(startDate, endDate):
-    print('Getting matches between ' + startDate + ' and ' + endDate + ' for ' + ' & '.join(leagueNameList))
+    print('Getting matches between ' + str(startDate) + ' and ' + str(endDate) + ' for ' + ' & '.join(leagueNameList))
     start = datetime.datetime.strptime(startDate, "%Y-%m-%d")
     end = datetime.datetime.strptime(endDate, "%Y-%m-%d")
     matchDay = start
