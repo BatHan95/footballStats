@@ -1,0 +1,1 @@
+python3 -m pip install -r requirements.txt -t ./python && zip -r python_layer.zip ./python/ # Package up PY imports
