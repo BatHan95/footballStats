@@ -202,15 +202,17 @@ def generateBets(df):
         if row['statName'] != 'Yellow cards':
             stat = round(row['avg']-0.65)
             max = math.ceil((row['max'] * 6 + row['avg'] * 2)/8)
-            betList.append([row['matchId'], row['teamName'], row['homeOrAway'], row['statName'], stat, max])
+            betList.append([row['matchId'], row['competitionId'], row['matchDate'], row['teamName'], row['homeOrAway'], row['statName'], stat, max])
         if row['statName'] == 'Yellow cards':
             bookingPoints = (row['min'] * 3 + row['avg'] * 7)/10 * 10
             bookingPoints = bookingPoints - (bookingPoints%10)
-            betList.append([row['matchId'], row['teamName'], row['homeOrAway'], 'Booking points', bookingPoints, bookingPoints])
-    betDf = pd.DataFrame(betList, columns= ['matchId', 'teamName', 'homeOrAway', 'statName', 'stat', 'max'])
+            betList.append([row['matchId'], row['competitionId'], row['matchDate'], row['teamName'], row['homeOrAway'], 'Booking points', bookingPoints, bookingPoints])
+    betDf = pd.DataFrame(betList, columns= ['matchId', 'competitionId', 'matchDate', 'teamName', 'homeOrAway', 'statName', 'stat', 'max'])
 
     matchStats = {}
-    print('\n')
+    responseObject = {}
+
+    bets = []
     for index, row in betDf.iterrows():
         if row['matchId'] in matchStats:
             if row['homeOrAway'] =='home':
@@ -226,14 +228,29 @@ def generateBets(df):
                 matchStats[row['matchId']] = {'homeTeam': row['teamName']}
             if row['homeOrAway'] =='away':
                 matchStats[row['matchId']] = {'awayTeam': row['awayName']}
-            matchStats[row['matchId']] = {row['statName']: row['stat']}
+            matchStats[row['matchId']] = {
+                row['statName']: row['stat'],
+                'competitionId': row['competitionId'],
+                'matchDate': row['matchDate']
+                }
         if row['statName'] != 'Booking points':
-            print(f"{row['teamName']} ({row['homeOrAway']}) to have {math.floor(row['stat'])}+ {row['statName']} and under {math.floor(row['max'])} {row['statName']}")
+            bets.append(f"{row['teamName']} ({row['homeOrAway']}) to have {math.floor(row['stat'])}+ {row['statName']} and under {math.floor(row['max'])} {row['statName']}")
         if row['statName'] == 'Booking points':
             bookingPoints = row['stat']
-            print(f"{row['teamName']} ({row['homeOrAway']}) to have {math.floor(bookingPoints)}+ booking points")
+            bets.append(f"{row['teamName']} ({row['homeOrAway']}) to have {math.floor(bookingPoints)}+ booking points")
     for key, value in matchStats.items():
-        print(f"{value['homeTeam']} vs {value['awayTeam']} to have {value['Total shots']}+ Total Shots, {value['Shots on target']}+ Total Shots on Target, {value['Corners']}+ Total Corners and {value['Booking points']}+ Total Booking Points\n")
+        matchId = key
+        responseObject.update({matchId: {
+            "teams": {
+                "home": value['homeTeam'],
+                "away": value['awayTeam']
+            },
+            "league": value['competitionId'],
+            "date": value['matchDate']
+        }})
+        bets.append(f"{value['homeTeam']} vs {value['awayTeam']} to have {value['Total shots']}+ Total Shots, {value['Shots on target']}+ Total Shots on Target, {value['Corners']}+ Total Corners and {value['Booking points']}+ Total Booking Points")
+    responseObject[matchId]['bets'] = bets
+    return responseObject
 
 
 # print(getMatchesTomorrow())

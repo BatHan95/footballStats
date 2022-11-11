@@ -58,7 +58,7 @@ def generateHomeSelectQuery(row, stats):
     and s.statName in (select * from check_stats)
     and s.homeOrAway = 'home';
 
-    select {row['matchId']} as matchId, home.statName, (select teamName from teamsData where teamId = {row['homeTeamId']}), 'home' as homeOrAway, home.homeMin, home.homeMax, home.homeAvg, awayConcededMin, awayConcededMax, awayConcededAvg 
+    select {row['matchId']} as matchId, {row['competitionId']} as competitionId, '{row['matchDate']}' as matchDate, home.statName, (select teamName from teamsData where teamId = {row['homeTeamId']}), 'home' as homeOrAway, home.homeMin, home.homeMax, home.homeAvg, awayConcededMin, awayConcededMax, awayConcededAvg 
     into TEMPORARY table temp_final_stats
     from(
     select
@@ -81,6 +81,8 @@ def generateHomeSelectQuery(row, stats):
 
     select 
     matchId
+    , competitionId
+    , matchDate
     , teamName
     , homeOrAway
     , statName
@@ -129,7 +131,7 @@ def generateAwaySelectQuery(row, stats):
     and s.statName in (select * from check_stats)
     and s.homeOrAway = 'away';
 
-    select {row['matchId']} as matchId, away.statName, (select teamName from teamsData where teamId = {row['awayTeamId']}), 'away' as homeOrAway, awayMin, awayMax, awayAvg, homeConcededMin, homeConcededMax, homeConcededAvg 
+    select {row['matchId']} as matchId, {row['competitionId']} as competitionId, '{row['matchDate']}' as matchDate, away.statName, (select teamName from teamsData where teamId = {row['awayTeamId']}), 'away' as homeOrAway, awayMin, awayMax, awayAvg, homeConcededMin, homeConcededMax, homeConcededAvg 
     into TEMPORARY table temp_final_stats
     from(
     select
@@ -152,6 +154,8 @@ def generateAwaySelectQuery(row, stats):
 
     select
     matchId
+    , competitionId
+    , matchDate
     , teamName
     , homeOrAway
     , statName
