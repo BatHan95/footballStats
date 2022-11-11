@@ -1,16 +1,21 @@
 import fotmobData
 import rdsConnector
+import datetime
 import pandas as pd
 
-# matchesDf = pd.DataFrame(fotmobData.getMatchesInDateRange('2022-11-09', '2022-11-09'), columns = fotmobData.matchesCols).drop_duplicates()
-# rdsConnector.rdsInsert(matchesDf, 'matches')
-# statsDf = pd.DataFrame(fotmobData.getAllStats(matchesDf), columns=fotmobData.statsCols).drop_duplicates()
-# rdsConnector.rdsInsert(statsDf, 'stats')
-# teamsDf = fotmobData.getTeamNamesForLeagues(fotmobData.leagues)
-# rdsConnector.rdsInsert(teamsDf, 'teams')
+def refresh():
+    dateYesterday = datetime.date.today() - datetime.timedelta(days=1)
+    matchesDf = pd.DataFrame(fotmobData.getMatchesInDateRange(dateYesterday, dateYesterday), columns = fotmobData.matchesCols).drop_duplicates()
+    rdsConnector.rdsInsert(matchesDf, 'matches')
+    statsDf = pd.DataFrame(fotmobData.getAllStats(matchesDf), columns=fotmobData.statsCols).drop_duplicates()
+    rdsConnector.rdsInsert(statsDf, 'stats')
 
-matchesDf = pd.DataFrame(fotmobData.getMatchesTomorrow(), columns = fotmobData.matchesCols).drop_duplicates()
+def updateTeams():
+    teamsDf = fotmobData.getTeamNamesForLeagues(fotmobData.leagues)
+    rdsConnector.rdsInsert(teamsDf, 'teams')
 
-for index, row in matchesDf.iterrows():
-    finalStatsDf = pd.DataFrame(rdsConnector.rdsSelect(row, ['Total shots', 'Corners', 'Yellow cards', 'Shots on target']), columns = ['matchId', 'teamName', 'homeOrAway', 'statName', 'min', 'max', 'avg'])
-    fotmobData.generateBets(finalStatsDf)
+def getBetsForTomorrow():
+    matchesDf = pd.DataFrame(fotmobData.getMatchesTomorrow(), columns = fotmobData.matchesCols).drop_duplicates()
+    for index, row in matchesDf.iterrows():
+        finalStatsDf = pd.DataFrame(rdsConnector.rdsSelect(row, ['Total shots', 'Corners', 'Yellow cards', 'Shots on target']), columns = ['matchId', 'teamName', 'homeOrAway', 'statName', 'min', 'max', 'avg'])
+        fotmobData.generateBets(finalStatsDf)
