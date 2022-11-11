@@ -22,16 +22,12 @@ functions:
     timeout: 900
     layers:
       # py 3.8:
-      - arn:aws:lambda:eu-west-2:736304223463:layer:psycopg2:1
-      - arn:aws:lambda:eu-west-2:736304223463:layer:pandas:1
-      - arn:aws:lambda:eu-west-2:736304223463:layer:datetime:1,
-      - arn:aws:lambda:eu-west-2:736304223463:layer:requests:1
+      - arn:aws:lambda:eu-west-2:736304223463:layer:psycopg2:2 # Needed
 
 
+plugins:
+  - serverless-python-requirements
 
-# plugins:
-#   - serverless-python-requirements
-
-# custom:
-#   pythonRequirements:
-#     dockerizePip: non-linux
+custom:
+  pythonRequirements:
+    dockerizePip: non-linux
