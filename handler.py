@@ -56,7 +56,7 @@ def run(event, context):
             "context": updateText
     }
 
-    return json.dumps(response)
+    return response
 
 print(run({
     'api_key': API_KEY,
