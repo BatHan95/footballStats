@@ -13,24 +13,22 @@ def run(event, context):
         ### Poorly Handelled Checks
         try:
             if(event['api_key'] != API_KEY):
-                response = {
-                    "statusCode": 403,
-                    "context": parser.parse_error('Issue with authentication - 403')
-                }
-                return response
+                raise Exception('Wrong API Key')
         except:
                 response = {
                     "statusCode": 403,
-                    "context": parser.parse_error('Issue with authentication - 403')
+                    "context": parser.parse_error('Issue with authentication ')
                 }
                 return response
         
         try:
             event['action']
         except:
-            updateText = parser.parse_error('No action provided')
-            status = 400
-            raise Exception('No action provided - 400')
+            response = {
+                "statusCode": 400,
+                "context": parser.parse_error('No action provided')
+            }
+            return response
 
         ### Events
 
@@ -47,6 +45,7 @@ def run(event, context):
             status = 200 if betsTomorrow[1] else 500
 
         elif (event['action'] == 'getBetsForTomorrow_email'):
+            # Run get bets logic and parse for email
             response_raw = main.getBetsForTomorrow()
             updateText = response_raw[0]
             response = parser.parse_bets_for_email(response_raw[0])
@@ -57,11 +56,10 @@ def run(event, context):
             status = 400
             updateText = parser.parse_error(event['action'], 'is not a valid action')
 
-    except:        
-        response = {
-            "statusCode": status,
-            "context": updateText
-        }
+    except Exception as e:
+        status = 500
+        print(e)
+        updateText = 'Some issue somewhere, we didnt know about it before now thou'
     
     response = {
             "statusCode": status,
@@ -71,6 +69,6 @@ def run(event, context):
     return response
 
 # print(run({
-#     'api_key': API_KEY,
+#     'api_key': "API_KEY",
 #     'action': 'refresh'
 # },{}))
