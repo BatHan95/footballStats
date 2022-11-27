@@ -49,7 +49,4 @@ def run(event, context):
 
     return response
 
-run({
-  "api_key": "HhwhnMfuqhWnKQ@@b@7QI!T12H5JPqA4oKZrOy^B8UtVC$HbnejIPgj5jIvKJP3KAqS4oxe$^ULdxRlE2xzBuyHY9KhRc%2MSVJ",
-  "action": "getBetsForTomorrow_email"
-},{})
+print(run({},{}))
