@@ -1,3 +1,4 @@
+import html
 
 def parse_bets_for_email(data):
 
@@ -10,3 +11,8 @@ def parse_bets_for_email(data):
                 output_string += bet + '<br>'
             output_string += '<br>'
     return output_string
+
+def parse_error (issue, additional_text=''):
+    safe_error = html.escape(issue)
+    safe_additional_text = html.escape(additional_text)
+    return f'{ safe_error } { safe_additional_text }'

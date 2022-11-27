@@ -9,56 +9,68 @@ def run(event, context):
     status = False
     updateText = ''
     try:
+
+        ### Poorly Handelled Checks
         try:
             if(event['api_key'] != API_KEY):
                 response = {
-                    "statusCode": 200 if status else 400,
-                    "context": '403 - Issue with authentication'
+                    "statusCode": 403,
+                    "context": parser.parse_error('Issue with authentication - 403')
                 }
                 return response
         except:
                 response = {
-                    "statusCode": 200 if status else 400,
-                    "context": '403 - Issue with authentication'
+                    "statusCode": 403,
+                    "context": parser.parse_error('Issue with authentication - 403')
                 }
                 return response
         
         try:
             event['action']
         except:
-            updateText = '400 - No action provided'
-            raise Exception('No action provided')
+            updateText = parser.parse_error('No action provided')
+            status = 400
+            raise Exception('No action provided - 400')
+
+        ### Events
 
         if (event['action'] == 'refresh'):
             # Run refresh logic
-            main.refresh()
-            updateText = '200 - Refresh Successful'
-            status = True
+            refresh = main.refresh()
+            updateText = f'Refresh - { refresh[0] }'
+            status = 200 if refresh[1] else 500
+
         elif (event['action'] == 'getBetsForTomorrow'):
             # Run get bets logic
-            updateText = main.getBetsForTomorrow()
-            status = True
+            betsTomorrow = main.getBetsForTomorrow()
+            updateText = betsTomorrow[0]
+            status = 200 if betsTomorrow[1] else 500
+
         elif (event['action'] == 'getBetsForTomorrow_email'):
             response_raw = main.getBetsForTomorrow()
-            response = parser.parse_bets_for_email(response_raw)
-            return response
-        else:
-            updateText = f"""{event['action']} is not a valid action"""
+            updateText = response_raw[0]
+            response = parser.parse_bets_for_email(response_raw[0])
+            updateText = response
+            status = 200 if response_raw[1] else 500
 
-    except:
+        else:
+            status = 400
+            updateText = parser.parse_error(event['action'], 'is not a valid action')
+
+    except:        
         response = {
-            "statusCode": 200 if status else 400,
+            "statusCode": status,
             "context": updateText
         }
     
     response = {
-            "statusCode": 200 if status else 400,
+            "statusCode": status,
             "context": updateText
     }
 
     return response
 
-print(run({
-    'api_key': API_KEY,
-    'action': 'test_email'
-},{}))
+# print(run({
+#     'api_key': API_KEY,
+#     'action': 'refresh'
+# },{}))
