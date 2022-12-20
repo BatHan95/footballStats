@@ -11,7 +11,7 @@ statsCols = ['matchId', 'teamId', 'statName', 'stat', 'homeOrAway', 'season']
 teamsCols = ['teamId', 'leagueId', 'teamName']
 relevantStats = ['Accurate crosses', 'Corners']
 
-leagues = [{'name': 'Premier League', 'id': '47'}]
+leagues = [{'name': 'Premier League', 'id': '47'}, {'name': 'LaLiga', 'id': '87'}, {'name': 'Serie A', 'id': '55'}, {'name': 'Bundesliga', 'id': '54'}, {'name': 'Ligue 1', 'id': '53'}]
 
 leagueIdList = []
 for league in leagues:
