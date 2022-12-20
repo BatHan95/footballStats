@@ -3,6 +3,8 @@ import fotmobData
 import rdsConnector
 import datetime
 import pandas as pd
+import tqdm
+from concurrent.futures import ProcessPoolExecutor
 import math
 
 statWeightings = {
@@ -19,8 +21,8 @@ statWeightings = {
         'conceded': 0.35
     },
     'Accurate crosses': {
-        'won': 0.5,
-        'conceded': 0.33
+        'won': 0.475,
+        'conceded': 0.3
     },
     'Blocked shots': {
         'won': 0.4,
@@ -28,9 +30,9 @@ statWeightings = {
     }
 }
 
-attemptedCrossesToCorners = 0.27
+attemptedCrossesToCorners = 0.275
 maxMutiplier = 2.35
-teamWeightingsEffect = [0.67, 0.115]
+teamWeightingsEffect = [0.66, 0.115]
 
 queryTypes = ['home', 'away']
 statTypes = ['Accurate crosses']
@@ -47,31 +49,30 @@ def accurateCrossesToAttemptedCrosses(rawStat):
 
 def newTestAlgorithm(inputRow):
     checkResult = []
-    print('testing new bets for ' + str(inputRow['matchId']))
-    matchId = inputRow['matchId']
+    matchId = inputRow[1]
     queryResults = []
     checkStats = []
-    homeTeam = inputRow['homeTeamId']
-    awayTeam = inputRow['awayTeamId']
-    matchDate = inputRow['matchDate']
-    competitionId = inputRow['competitionId']
+    homeTeam = inputRow[2]
+    awayTeam = inputRow[3]
+    matchDate = inputRow[4]
+    competitionId = inputRow[0]
     statWeightWon = statWeightings['Accurate crosses']['won']
     statWeightConceded = statWeightings['Accurate crosses']['conceded']
     homeConceded = []
     awayWon = []
     homeWon = []
     awayConceded = []
-    homeTeamWeighting = inputRow['homeTeamPosition']
-    homeTeamName = rdsConnector.selectTeamName(inputRow['homeTeamId'])
-    awayTeamWeighting = inputRow['awayTeamPosition']
-    awayTeamName = rdsConnector.selectTeamName(inputRow['awayTeamId'])
+    homeTeamWeighting = inputRow[5]
+    homeTeamName = rdsConnector.selectTeamName(homeTeam)
+    awayTeamWeighting = inputRow[6]
+    awayTeamName = rdsConnector.selectTeamName(awayTeam)
     for queryType in queryTypes:
         queryResults.append(rdsConnector.rdsSelectStats(inputRow, 'Accurate crosses', queryType))
         checkStats.append(rdsConnector.rdsSelectStats(inputRow, 'Corners', queryType))
     queryResults = [item for sublist in queryResults for item in sublist]
     queryResultsDf = pd.DataFrame(queryResults, columns=['matchId', 'matchDate', 'teamName', 'statName', 'stat', 'homeOrAway', 'season', 'type', 'homeTeamWeight', 'awayTeamWeight'])
     for index, row in queryResultsDf.iterrows():
-        if row['matchId'] != matchId and row['matchDate'] < matchDate:
+        if row['matchId'] != matchId:# and row['matchDate'] < matchDate:
             stat = accurateCrossesToAttemptedCrosses(row['stat'])[2]
             statHomeAwayType = row['type'].split('_')[0]
             statWonConcededType = row['type'].split('_')[1]
@@ -107,20 +108,23 @@ def testBets(dateFrom, dateTo):
     for leagueId in fotmobData.leagueIdList:
         testMatchesData.append(rdsConnector.rdsSelectMatches(dateFrom, dateTo, leagueId))
 
-    df = pd.DataFrame([item for sublist in testMatchesData for item in sublist], columns=fotmobData.matchesCols)
+    df = [item for sublist in testMatchesData for item in sublist]
     # df = df.loc[df['matchId'] == 3916094]
 
     checkResults = []
-    for index, row in df.iterrows():
-        checkResults.append(newTestAlgorithm(row))
-    checkResults = [item for sublist in checkResults for item in sublist]
+    if __name__ == '__main__':
+        with tqdm.tqdm(total=len(df)) as pbar:
+            with ProcessPoolExecutor(max_workers=16) as executor:
+                for r in executor.map(newTestAlgorithm, df):
+                    checkResults.append(r)
+                    pbar.update(1)
+        checkResults = [item for sublist in checkResults for item in sublist]
+        checkResultsDf = pd.DataFrame(checkResults, columns=['matchId', 'match', 'stat', 'overallWin', 'predictedHomeStat', 'predictedMaxHomeStat', 'predictedAwayStat', 'predictedMaxAwayStat', 'homeWin', 'awayWin'])
+        lostBets = checkResultsDf.loc[checkResultsDf['overallWin'] == False, ['matchId']].drop_duplicates().values.tolist()
+        lostBets = [item for sublist in lostBets for item in sublist]
+        totallyWonBets = checkResultsDf.loc[~(checkResultsDf['matchId'].isin(lostBets))].reset_index()
+        # print(checkResultsDf)
+        print(f"Would have won {totallyWonBets['matchId'].nunique()} bets out of {totallyWonBets['matchId'].nunique() + len(lostBets)} ({math.ceil(totallyWonBets['matchId'].nunique()/(totallyWonBets['matchId'].nunique() + len(lostBets))*100.0)}%) between {str(dateFrom)} and {str(dateTo)} in {' & '.join(fotmobData.leagueNameList)}")
 
-    checkResultsDf = pd.DataFrame(checkResults, columns=['matchId', 'match', 'stat', 'overallWin', 'predictedHomeStat', 'predictedMaxHomeStat', 'predictedAwayStat', 'predictedMaxAwayStat', 'homeWin', 'awayWin'])
-    lostBets = checkResultsDf.loc[checkResultsDf['overallWin'] == False, ['matchId']].drop_duplicates().values.tolist()
-    print(checkResultsDf)
-    lostBets = [item for sublist in lostBets for item in sublist]
-    totallyWonBets = checkResultsDf.loc[~(checkResultsDf['matchId'].isin(lostBets))].reset_index()
-    print(f"Would have won {totallyWonBets['matchId'].nunique()} bets out of {totallyWonBets['matchId'].nunique() + len(lostBets)} between {str(dateFrom)} and {str(dateTo)} in {' & '.join(fotmobData.leagueNameList)}")
 
-
-testBets('2022-11-12', '2022-11-12')
+testBets('2022-11-01', '2022-12-19')

@@ -22,7 +22,7 @@ def generateStatQuery(row, stat, queryType):
             on t.teamId = s.teamId
             join matchesdata as m
             on m.matchId = s.matchId
-            where t.teamId = {row['homeTeamId']}
+            where t.teamId = {row[2]}
             and s.statName in ('{stat}')
             and s.homeOrAway = 'home'
             union all
@@ -34,7 +34,7 @@ def generateStatQuery(row, stat, queryType):
             on t2.teamId = m.hometeamid
             join teamsData as t
             on t.teamId = m.awayTeamId
-            where t.teamId = {row['awayTeamId']}
+            where t.teamId = {row[3]}
             and s.statName in ('{stat}')
             and s.homeOrAway = 'home'
             """,
@@ -45,7 +45,7 @@ def generateStatQuery(row, stat, queryType):
             on m.matchId = s.matchId
             join teamsData as t
             on t.teamId = s.teamId
-            where t.teamId = {row['awayTeamId']}
+            where t.teamId = {row[3]}
             and s.statName in ('{stat}')
             and s.homeOrAway = 'away'
             union all
@@ -57,7 +57,7 @@ def generateStatQuery(row, stat, queryType):
             on t2.teamId = m.awayteamid
             join teamsData as t
             on t.teamId = m.homeTeamId
-            where t.teamId = {row['homeTeamId']}
+            where t.teamId = {row[2]}
             and s.statName in ('{stat}')
             and s.homeOrAway = 'away'
             """

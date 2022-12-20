@@ -11,7 +11,7 @@ statsCols = ['matchId', 'teamId', 'statName', 'stat', 'homeOrAway', 'season']
 teamsCols = ['teamId', 'leagueId', 'teamName']
 relevantStats = ['Accurate crosses', 'Corners']
 
-leagues = [{'name': 'Premier League', 'id': '47'}, {'name': 'LaLiga', 'id': '87'}, {'name': 'Serie A', 'id': '55'}, {'name': 'Bundesliga', 'id': '54'}, {'name': 'Ligue 1', 'id': '53'}]
+leagues = [{'name': 'Premier League', 'id': '47'}, {'name': 'LaLiga', 'id': '87'}, {'name': 'Ligue 1', 'id': '53'}, {'name': 'Championship', 'id': '48'}]
 
 leagueIdList = []
 for league in leagues:
@@ -21,7 +21,7 @@ leagueNameList = []
 for league in leagues:
         leagueNameList.append(league['name'])
 
-otherLeagues = [{'name': 'Premier League', 'id': '47'}, {'name': 'LaLiga', 'id': '87'}, {'name': 'Serie A', 'id': '55'}, {'name': 'Bundesliga', 'id': '54'}, {'name': 'Ligue 1', 'id': '53'}, {'name': 'League 1', 'id': '108'}]
+otherLeagues = [{'name': 'Premier League', 'id': '47'}, {'name': 'LaLiga', 'id': '87'}, {'name': 'Serie A', 'id': '55'}, {'name': 'Bundesliga', 'id': '54'}, {'name': 'Ligue 1', 'id': '53'}, {'name': 'League 1', 'id': '108'}, {'name': 'Championship', 'id': '48'}]
 
 def getLeaguePosition(teamId, leagueId):
     url = baseUrl + '/leagues?type=league&id=' + str(leagueId)
@@ -43,7 +43,7 @@ def getMatchesByLeague(leagueId):
     matchDataList = data['matches']['data']['allMatches']
     for match in matchDataList:
         if (match['status']['finished'] == True) & (match['status']['cancelled'] == False) :
-            matchDate = str(datetime.datetime.strptime(match['monthKey'], '%A, %d %B %Y'))
+            matchDate = datetime.datetime.strptime(match['monthKey'], '%A, %d %B %Y')
             matchId = match['id']
             homeTeamId = match['home']['id']
             awayTeamId = match['away']['id']
@@ -64,7 +64,7 @@ def getMatchesByDate(date):
         competitionId = competition['primaryId']
         for match in competition['matches']:
             if (match['status']['finished'] == True) & (match['status']['cancelled'] == False) & (str(competitionId) in leagueIdList):
-                matchDate = str(datetime.datetime.strptime(match['time'], '%d.%m.%Y %H:%M').date())
+                matchDate = datetime.datetime.strptime(match['time'], '%d.%m.%Y %H:%M').date()
                 matchId = match['id']
                 homeTeamId = match['home']['id']
                 awayTeamId = match['away']['id']
@@ -223,7 +223,7 @@ def getMatchesTomorrow():
         competitionId = competition['primaryId']
         for match in competition['matches']:
             if (match['status']['started'] == False) & (match['status']['cancelled'] == False) & (str(competitionId) in leagueIdList):
-                matchDate = str(datetime.datetime.strptime(match['time'], '%d.%m.%Y %H:%M').date())
+                matchDate = datetime.datetime.strptime(match['time'], '%d.%m.%Y %H:%M').date()
                 matchId = match['id']
                 homeTeamId = match['home']['id']
                 awayTeamId = match['away']['id']
@@ -245,7 +245,7 @@ def getMatchesToday():
         competitionId = competition['primaryId']
         for match in competition['matches']:
             if (match['status']['started'] == False) & (match['status']['cancelled'] == False) & (str(competitionId) in leagueIdList):
-                matchDate = str(datetime.datetime.strptime(match['time'], '%d.%m.%Y %H:%M').date())
+                matchDate = datetime.datetime.strptime(match['time'], '%d.%m.%Y %H:%M').date()
                 matchId = match['id']
                 homeTeamId = match['home']['id']
                 awayTeamId = match['away']['id']

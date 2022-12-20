@@ -16,8 +16,8 @@ statWeightings = {
         'conceded': 0.35
     },
     'Accurate crosses': {
-        'won': 0.5,
-        'conceded': 0.33
+        'won': 0.475,
+        'conceded': 0.3
     },
     'Blocked shots': {
         'won': 0.4,
@@ -25,9 +25,9 @@ statWeightings = {
     }
 }
 
-attemptedCrossesToCorners = 0.27
+attemptedCrossesToCorners = 0.275
 maxMutiplier = 2.35
-teamWeightingsEffect = [0.67, 0.115]
+teamWeightingsEffect = [0.66, 0.115]
 queryTypes = ['home', 'away']
 statTypes = ['Accurate crosses']
 queryResults = []
