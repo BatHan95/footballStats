@@ -21,8 +21,8 @@ statWeightings = {
         'conceded': 0.35
     },
     'Accurate crosses': {
-        'won': 0.475,
-        'conceded': 0.3
+        'won': 0.456,
+        'conceded': 0.31
     },
     'Blocked shots': {
         'won': 0.4,
@@ -30,9 +30,9 @@ statWeightings = {
     }
 }
 
-attemptedCrossesToCorners = 0.275
-maxMutiplier = 2.35
-teamWeightingsEffect = [0.66, 0.115]
+attemptedCrossesToCorners = 0.28
+maxMutiplier = 2.4
+teamWeightingsEffect = [0.65, 0.12]
 
 queryTypes = ['home', 'away']
 statTypes = ['Accurate crosses']
@@ -127,4 +127,4 @@ def testBets(dateFrom, dateTo):
         print(f"Would have won {totallyWonBets['matchId'].nunique()} bets out of {totallyWonBets['matchId'].nunique() + len(lostBets)} ({math.ceil(totallyWonBets['matchId'].nunique()/(totallyWonBets['matchId'].nunique() + len(lostBets))*100.0)}%) between {str(dateFrom)} and {str(dateTo)} in {' & '.join(fotmobData.leagueNameList)}")
 
 
-testBets('2022-11-01', '2022-12-19')
+# testBets('2022-11-10', '2022-12-19')
