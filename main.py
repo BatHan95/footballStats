@@ -2,6 +2,7 @@ import fotmobData
 import rdsConnector
 import datetime
 import pandas as pd
+import generateBets
 
 def refresh():
     try:
@@ -26,6 +27,20 @@ def getBetsForTomorrow():
         for index, row in matchesDf.iterrows():
             finalStatsDf = pd.DataFrame(rdsConnector.rdsSelect(row, ['Total shots', 'Corners', 'Yellow cards', 'Shots on target']), columns = ['matchId', 'competitionId', 'matchDate', 'teamName', 'homeOrAway', 'statName', 'min', 'max', 'avg'])
             bets.append(fotmobData.generateBets(finalStatsDf))
+        return ({"matches": bets}, True)
+    except Exception as e:
+        print(f'Error - { str(e) }')
+        return (f'Error', False)
+
+
+def getBetsForDateRange(dateFrom, dateTo):
+    try: 
+        dateFrom = datetime.datetime.strptime(dateFrom, '%Y-%m-%d').date()
+        dateTo = datetime.datetime.strptime(dateTo, '%Y-%m-%d').date()
+        matchesDf = matchesDf = pd.DataFrame(fotmobData.getFutureMatchesInDateRange(dateFrom, dateTo), columns = fotmobData.matchesCols).drop_duplicates()
+        bets = []
+        for index, row in matchesDf.iterrows():
+            bets.append(generateBets.generateBets(row))
         return ({"matches": bets}, True)
     except Exception as e:
         print(f'Error - { str(e) }')

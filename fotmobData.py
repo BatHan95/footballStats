@@ -6,11 +6,12 @@ import math
 
 baseUrl = 'https://www.fotmob.com/api'
 
-matchesCols = ['competitionId', 'matchId', 'homeTeamId', 'awayTeamId', 'matchDate']
+matchesCols = ['competitionId', 'matchId', 'homeTeamId', 'awayTeamId', 'matchDate', 'homeTeamPosition', 'awayTeamPosition', 'homeTeamName', 'awayTeamName']
 statsCols = ['matchId', 'teamId', 'statName', 'stat', 'homeOrAway', 'season']
 teamsCols = ['teamId', 'leagueId', 'teamName']
+relevantStats = ['Accurate crosses', 'Corners']
 
-leagues = [{'name': 'Premier League', 'id': '47'}, {'name': 'LaLiga', 'id': '87'}, {'name': 'Serie A', 'id': '55'}, {'name': 'Bundesliga', 'id': '54'}, {'name': 'Ligue 1', 'id': '53'}]
+leagues = [{'name': 'Premier League', 'id': '47'}]
 
 leagueIdList = []
 for league in leagues:
@@ -20,7 +21,19 @@ leagueNameList = []
 for league in leagues:
         leagueNameList.append(league['name'])
 
-otherLeagues = [{'name': 'LaLiga', 'id': '87'}, {'name': 'Serie A', 'id': '55'}, {'name': 'Bundesliga', 'id': '54'}, {'name': 'Ligue 1', 'id': '53'}]
+otherLeagues = [{'name': 'Premier League', 'id': '47'}, {'name': 'LaLiga', 'id': '87'}, {'name': 'Serie A', 'id': '55'}, {'name': 'Bundesliga', 'id': '54'}, {'name': 'Ligue 1', 'id': '53'}, {'name': 'League 1', 'id': '108'}]
+
+def getLeaguePosition(teamId, leagueId):
+    url = baseUrl + '/leagues?type=league&id=' + str(leagueId)
+    r = requests.get(url)
+    data = r.json()
+    leagueTable = data['table'][0]['data']['table']['all']
+    for team in leagueTable:
+        if team['id'] == teamId:
+            teamPosition = team['idx']
+            teamName = (team['name']).replace("'", "")
+    return teamPosition, teamName
+
 
 def getMatchesByLeague(leagueId):
     url = baseUrl + '/leagues?type=league&id=' + leagueId
@@ -34,7 +47,9 @@ def getMatchesByLeague(leagueId):
             matchId = match['id']
             homeTeamId = match['home']['id']
             awayTeamId = match['away']['id']
-            matchData.append([leagueId, matchId, homeTeamId, awayTeamId, matchDate])
+            homeLeaguePosition, homeTeamName = getLeaguePosition(homeTeamId, leagueId)
+            awayLeaguePosition, awayTeamName = getLeaguePosition(awayTeamId, leagueId)
+            matchData.append([leagueId, matchId, homeTeamId, awayTeamId, matchDate, homeLeaguePosition, awayLeaguePosition])
     if matchData != []:
         return matchData
 
@@ -53,7 +68,9 @@ def getMatchesByDate(date):
                 matchId = match['id']
                 homeTeamId = match['home']['id']
                 awayTeamId = match['away']['id']
-                matchData.append([competitionId, matchId, homeTeamId, awayTeamId, matchDate])
+                homeLeaguePosition, homeTeamName = getLeaguePosition(homeTeamId, competitionId)
+                awayLeaguePosition, awayTeamName = getLeaguePosition(awayTeamId, competitionId)
+                matchData.append([competitionId, matchId, homeTeamId, awayTeamId, matchDate, homeLeaguePosition, awayLeaguePosition, homeTeamName, awayTeamName])
     if matchData != []:
         return matchData
 
@@ -73,8 +90,9 @@ def getMatchStats(matchId, homeTeamId, awayTeamId):
                         statName = stat['title']
                         homeStat = stat['stats'][0]
                         awayStat = stat['stats'][1]
-                        statsData.append([matchId, homeTeamId, statName, homeStat, 'home', season])
-                        statsData.append([matchId, awayTeamId, statName, awayStat, 'away', season])
+                        if statName in relevantStats:
+                            statsData.append([matchId, homeTeamId, statName, homeStat, 'home', season])
+                            statsData.append([matchId, awayTeamId, statName, awayStat, 'away', season])
         except:
             pass
         if statsData != []:
@@ -154,6 +172,43 @@ def getTeamNamesForLeagues(leagues):
         teamsNameDf = pd.DataFrame(teamsList, columns=teamsCols)
         return(teamsNameDf)
 
+def getFutureMatchesByDate(date):
+    dateString = date.strftime('%Y%m%d')
+    url = baseUrl + '/matches?date=' + dateString
+    r = requests.get(url)
+    data = r.json()
+    matchData = []
+    matchDataList = data['leagues']
+    for competition in matchDataList:
+        competitionId = competition['primaryId']
+        for match in competition['matches']:
+            if (match['status']['started'] == False) & (match['status']['cancelled'] == False) & (str(competitionId) in leagueIdList):
+                matchDate = datetime.datetime.strptime(match['time'], '%d.%m.%Y %H:%M').date()
+                matchId = match['id']
+                homeTeamId = match['home']['id']
+                awayTeamId = match['away']['id']
+                homeLeaguePosition, homeTeamName = getLeaguePosition(homeTeamId, competitionId)
+                awayLeaguePosition, awayTeamName = getLeaguePosition(awayTeamId, competitionId)
+                matchData.append([competitionId, matchId, homeTeamId, awayTeamId, matchDate, homeLeaguePosition, awayLeaguePosition, homeTeamName, awayTeamName])
+    if matchData != []:
+        return matchData
+
+def getFutureMatchesInDateRange(startDate, endDate):
+    print('Getting matches between ' + str(startDate) + ' and ' + str(endDate) + ' for ' + ' & '.join(leagueNameList))
+    start = startDate
+    end = endDate
+    matchDay = start
+    matchData = []
+    while matchDay <= end:
+        matchList = getFutureMatchesByDate(matchDay)
+        matchDay = matchDay + datetime.timedelta(days=1)
+        if matchList != None:
+            matchData.append(matchList)
+            print('Got ' + str(len(matchList)) + ' match(es) on ' + str(matchDay - datetime.timedelta(days=1)))
+    if matchData != []:
+        matchData = [item for sublist in matchData for item in sublist]
+        print('Got a total of ' + str(len(matchData)) + ' matches between ' + str(startDate) + ' and ' + str(endDate) + ' for ' + ' & '.join(leagueNameList))
+        return matchData
 
 def getMatchesTomorrow():
     dateToday = datetime.date.today()
@@ -172,7 +227,9 @@ def getMatchesTomorrow():
                 matchId = match['id']
                 homeTeamId = match['home']['id']
                 awayTeamId = match['away']['id']
-                matchData.append([competitionId, matchId, homeTeamId, awayTeamId, matchDate])
+                homeLeaguePosition, homeTeamName = getLeaguePosition(homeTeamId, competitionId)
+                awayLeaguePosition, awayTeamName = getLeaguePosition(awayTeamId, competitionId)
+                matchData.append([competitionId, matchId, homeTeamId, awayTeamId, matchDate, homeLeaguePosition, awayLeaguePosition, homeTeamName, awayTeamName])
     if matchData != []:
         return matchData
 
@@ -192,65 +249,11 @@ def getMatchesToday():
                 matchId = match['id']
                 homeTeamId = match['home']['id']
                 awayTeamId = match['away']['id']
-                matchData.append([competitionId, matchId, homeTeamId, awayTeamId, matchDate])
+                homeLeaguePosition, homeTeamName = getLeaguePosition(homeTeamId, competitionId)
+                awayLeaguePosition, awayTeamName = getLeaguePosition(awayTeamId, competitionId)
+                matchData.append([competitionId, matchId, homeTeamId, awayTeamId, matchDate, homeLeaguePosition, awayLeaguePosition, homeTeamName, awayTeamName])
     if matchData != []:
         return matchData
-
-def generateBets(df):
-    betList = []
-    for index, row in df.iterrows():
-        if row['statName'] != 'Yellow cards':
-            stat = round(row['avg']-0.65)
-            max = math.ceil((row['max'] * 6 + row['avg'] * 2)/8)
-            betList.append([row['matchId'], row['competitionId'], row['matchDate'], row['teamName'], row['homeOrAway'], row['statName'], stat, max])
-        if row['statName'] == 'Yellow cards':
-            bookingPoints = (row['min'] * 3 + row['avg'] * 7)/10 * 10
-            bookingPoints = bookingPoints - (bookingPoints%10)
-            betList.append([row['matchId'], row['competitionId'], row['matchDate'], row['teamName'], row['homeOrAway'], 'Booking points', bookingPoints, bookingPoints])
-    betDf = pd.DataFrame(betList, columns= ['matchId', 'competitionId', 'matchDate', 'teamName', 'homeOrAway', 'statName', 'stat', 'max'])
-
-    matchStats = {}
-    responseObject = {}
-
-    bets = []
-    for index, row in betDf.iterrows():
-        if row['matchId'] in matchStats:
-            if row['homeOrAway'] =='home':
-                matchStats[row['matchId']]['homeTeam'] = row['teamName']
-            if row['homeOrAway'] =='away':
-                matchStats[row['matchId']]['awayTeam'] = row['teamName']
-            if row['statName'] in matchStats[row['matchId']]:
-                matchStats[row['matchId']][row['statName']] += row['stat']
-            else:
-                matchStats[row['matchId']][row['statName']] = row['stat']
-        else:
-            if row['homeOrAway'] =='home':
-                matchStats[row['matchId']] = {'homeTeam': row['teamName']}
-            if row['homeOrAway'] =='away':
-                matchStats[row['matchId']] = {'awayTeam': row['awayName']}
-            matchStats[row['matchId']] = {
-                row['statName']: row['stat'],
-                'competitionId': row['competitionId'],
-                'matchDate': row['matchDate']
-                }
-        if row['statName'] != 'Booking points':
-            bets.append(f"{row['teamName']} ({row['homeOrAway']}) to have {math.floor(row['stat'])}+ {row['statName']} and under {math.floor(row['max'])} {row['statName']}")
-        if row['statName'] == 'Booking points':
-            bookingPoints = row['stat']
-            bets.append(f"{row['teamName']} ({row['homeOrAway']}) to have {math.floor(bookingPoints)}+ booking points")
-    for key, value in matchStats.items():
-        matchId = key
-        responseObject.update({matchId: {
-            "teams": {
-                "home": value['homeTeam'],
-                "away": value['awayTeam']
-            },
-            "league": value['competitionId'],
-            "date": value['matchDate']
-        }})
-        bets.append(f"{value['homeTeam']} vs {value['awayTeam']} to have {value['Total shots']}+ Total Shots, {value['Shots on target']}+ Total Shots on Target, {value['Corners']}+ Total Corners and {value['Booking points']}+ Total Booking Points")
-    responseObject[matchId]['bets'] = bets
-    return responseObject
 
 
 # print(getMatchesTomorrow())

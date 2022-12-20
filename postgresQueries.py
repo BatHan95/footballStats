@@ -1,5 +1,5 @@
 from fotmobData import matchesCols, statsCols, teamsCols
-
+import random
 
 typeDict = {
     'matches': {
@@ -13,6 +13,57 @@ typeDict = {
         'indices': teamsCols[0:2]}
 }
 
+def generateStatQuery(row, stat, queryType):
+    queries = {
+        'home': f"""
+            select s.matchId, m.matchDate, t.teamName, s.statName, s.stat, s.homeOrAway, s.season, 'home_won' as type, m.homeTeamPosition as homeTeamWeight, m.awayTeamPosition as awayTeamWeight
+            from statsData as s
+            join teamsData as t
+            on t.teamId = s.teamId
+            join matchesdata as m
+            on m.matchId = s.matchId
+            where t.teamId = {row['homeTeamId']}
+            and s.statName in ('{stat}')
+            and s.homeOrAway = 'home'
+            union all
+            select s.matchId, m.matchDate, t2.teamName, s.statName, s.stat, s.homeOrAway, s.season, 'away_conceded' as type, m.homeTeamPosition as homeTeamWeight, m.awayTeamPosition as awayTeamWeight
+            from matchesdata as m
+            join statsData as s
+            on m.matchId = s.matchId
+            join teamsData as t2
+            on t2.teamId = m.hometeamid
+            join teamsData as t
+            on t.teamId = m.awayTeamId
+            where t.teamId = {row['awayTeamId']}
+            and s.statName in ('{stat}')
+            and s.homeOrAway = 'home'
+            """,
+        'away': f"""
+            select s.matchId, m.matchDate, t.teamName, s.statName, s.stat, s.homeOrAway, s.season, 'away_won' as type, m.homeTeamPosition as homeTeamWeight, m.awayTeamPosition as awayTeamWeight
+            from statsData as s
+            join matchesdata as m
+            on m.matchId = s.matchId
+            join teamsData as t
+            on t.teamId = s.teamId
+            where t.teamId = {row['awayTeamId']}
+            and s.statName in ('{stat}')
+            and s.homeOrAway = 'away'
+            union all
+            select s.matchId, m.matchDate, t2.teamName, s.statName, s.stat, s.homeOrAway, s.season, 'home_conceded' as type, m.homeTeamPosition as homeTeamWeight, m.awayTeamPosition as awayTeamWeight
+            from matchesdata as m
+            join statsData as s
+            on m.matchId = s.matchId
+            join teamsData as t2
+            on t2.teamId = m.awayteamid
+            join teamsData as t
+            on t.teamId = m.homeTeamId
+            where t.teamId = {row['homeTeamId']}
+            and s.statName in ('{stat}')
+            and s.homeOrAway = 'away'
+            """
+        }
+    return queries[queryType]
+
 def generateInsertQuery(type, row):
     typeCols = ", ".join(typeDict[type]['cols'])
     indices = ", ".join(typeDict[type]['indices'])
@@ -22,6 +73,35 @@ def generateInsertQuery(type, row):
     ON CONFLICT ({indices}) DO NOTHING
     """
     return insertQuery
+
+def generateSelectTestMatchesQuery(startDate, endDate, competitionId):
+    selectQuery =f"""
+    select 
+    *
+    from matchesdata 
+    where 
+    matchDate between '{startDate}' and '{endDate}'
+    and competitionid = {competitionId}
+    """
+    return selectQuery
+
+def generateTestInsertQuery(type, row):
+    typeCols = ", ".join(typeDict[type]['cols'])
+    indices = ", ".join(typeDict[type]['indices'])
+    insertQuery = f"""
+    INSERT INTO {type}Data({typeCols})
+    VALUES ( {', '.join(repr(e) for e in row)} )
+    ON CONFLICT ({indices}) DO NOTHING
+    """
+    return insertQuery
+
+def generateSelectTeamNameQuery(teamId):
+    selectQuery = f"""
+    select teamName
+    from teamsData 
+    where teamId = {teamId}
+    """
+    return selectQuery
 
 def generateHomeSelectQuery(row, stats):
     statString = ''
@@ -40,7 +120,7 @@ def generateHomeSelectQuery(row, stats):
     
     select s.matchId, t2.teamName, s.statName, s.stat, s.homeOrAway
     into temporary table temp_away_conceded_matches
-    from matchesData as m
+    from matchesdata as m
     join statsData as s
     on m.matchId = s.matchId
     join teamsData as t2
@@ -113,7 +193,7 @@ def generateAwaySelectQuery(row, stats):
     
     select s.matchId, t2.teamName, s.statName, s.stat, s.homeOrAway
     into temporary table temp_home_conceded_matches
-    from matchesData as m
+    from matchesdata as m
     join statsData as s
     on m.matchId = s.matchId
     join teamsData as t2
