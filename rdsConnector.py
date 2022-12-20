@@ -18,7 +18,7 @@ def rdsInsert(df, type):
     cur, conn = rdsConnection()
     print(f'Inserting {len(df)} {type}')
     for line_number, (index, row) in enumerate(df.iterrows()):
-        query = postgresQueries.generateTestInsertQuery(type, row)
+        query = postgresQueries.generateInsertQuery(type, row)
         print(f'Inserting/Updating {type} {line_number+1} of {len(df)} - {round(100*(line_number + 1)/len(df),1)}% complete')
         cur.execute(query)
         conn.commit()
@@ -26,25 +26,7 @@ def rdsInsert(df, type):
     conn.close()
     print(f'Inserted/Updated all {type}')
 
-def rdsSelect(row, stats):
-    queryResults = []
-    cur, conn = rdsConnection()
-    selectQuery = postgresQueries.generateHomeSelectQuery(row, stats)
-    cur.execute(selectQuery)
-    queryResult = cur.fetchall()
-    queryResults.append(queryResult)
-
-    selectQuery = postgresQueries.generateAwaySelectQuery(row, stats)
-    cur.execute(selectQuery)
-    queryResult = cur.fetchall()
-    queryResults.append(queryResult)
-
-    queryResults = [item for sublist in queryResults for item in sublist]
-    cur.close()
-    conn.close()
-    return(queryResults)
-
-def rdsSelectTest(row, stat, queryType):
+def rdsSelectStats(row, stat, queryType):
     cur, conn = rdsConnection()
     selectQuery = postgresQueries.generateStatQuery(row, stat, queryType)
     cur.execute(selectQuery)
@@ -53,9 +35,9 @@ def rdsSelectTest(row, stat, queryType):
     conn.close()
     return queryResults
 
-def rdsSelectTestMatches(startDate, endDate, competitionId):
+def rdsSelectMatches(startDate, endDate, competitionId):
     cur, conn = rdsConnection()
-    selectQuery = postgresQueries.generateSelectTestMatchesQuery(startDate, endDate, competitionId)
+    selectQuery = postgresQueries.generateSelectMatchesQuery(startDate, endDate, competitionId)
     cur.execute(selectQuery)
     queryResults = cur.fetchall()
     cur.close()

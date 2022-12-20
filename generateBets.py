@@ -63,8 +63,8 @@ def generateBets(inputRow):
     awayTeamWeighting = inputRow['awayTeamPosition']
     awayTeamName = rdsConnector.selectTeamName(inputRow['awayTeamId'])
     for queryType in queryTypes:
-        queryResults.append(rdsConnector.rdsSelectTest(inputRow, 'Accurate crosses', queryType))
-        checkStats.append(rdsConnector.rdsSelectTest(inputRow, 'Corners', queryType))
+        queryResults.append(rdsConnector.rdsSelectStats(inputRow, 'Accurate crosses', queryType))
+        checkStats.append(rdsConnector.rdsSelectStats(inputRow, 'Corners', queryType))
     queryResults = [item for sublist in queryResults for item in sublist]
     queryResultsDf = pd.DataFrame(queryResults, columns=['matchId', 'matchDate', 'teamName', 'statName', 'stat', 'homeOrAway', 'season', 'type', 'homeTeamWeight', 'awayTeamWeight'])
     for index, row in queryResultsDf.iterrows():
