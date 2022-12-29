@@ -6,11 +6,17 @@ import generateBets
 
 def refresh():
     try:
+        dateFrom = datetime.date.today() - datetime.timedelta(days=1)
         dateYesterday = datetime.date.today() - datetime.timedelta(days=1)
-        matchesDf = pd.DataFrame(fotmobData.getMatchesInDateRange(dateYesterday, dateYesterday), columns = fotmobData.matchesCols).drop_duplicates()
-        rdsConnector.rdsInsert(matchesDf, 'matches')
-        statsDf = pd.DataFrame(fotmobData.getAllStats(matchesDf), columns=fotmobData.statsCols).drop_duplicates()
-        rdsConnector.rdsInsert(statsDf, 'stats')
+        matchesList = fotmobData.getMatchesInDateRange(dateFrom, dateYesterday)
+        rdsConnector.rdsInsert(matchesList, 'matches')
+        matchesList = []
+        for leagueId in fotmobData.leagueIdList:
+            matchesList.append(rdsConnector.rdsSelectMatches(dateFrom, dateYesterday, leagueId))
+
+        matchesList = [item for sublist in matchesList for item in sublist]
+        statsList = fotmobData.getAllStats(matchesList)
+        rdsConnector.rdsInsert(statsList, 'stats')
         return (f'Success', True)
     except Exception as e:
         print(f'Error - { str(e) }')
@@ -21,16 +27,33 @@ def updateTeams():
     rdsConnector.rdsInsert(teamsDf, 'teams')
 
 def getBetsForTomorrow():
-    try:
-        matchesDf = pd.DataFrame(fotmobData.getMatchesTomorrow(), columns = fotmobData.matchesCols).drop_duplicates()
-        bets = []
-        for index, row in matchesDf.iterrows():
-            bets.append(generateBets.generateBets(row))
-        return ({"matches": bets}, True)
-    except Exception as e:
-        print(f'Error - { str(e) }')
-        return (f'Error', False)
+    print('\n')
+    matchesDf = pd.DataFrame(fotmobData.getMatchesTomorrow(), columns = fotmobData.matchesCols).drop_duplicates()
+    bets = []
+    for index, row in matchesDf.iterrows():
+        bets.append(generateBets.generateResponseObject(row))
+    print('\n')
+    return ({"matches": bets}, True)
 
+def getBetsForToday():
+    print('\n')
+    matchesDf = pd.DataFrame(fotmobData.getMatchesToday(), columns = fotmobData.matchesCols).drop_duplicates()
+    bets = []
+    for index, row in matchesDf.iterrows():
+        bets.append(generateBets.generateResponseObject(row))
+    print('\n')
+    return ({"matches": bets}, True)
+
+def addStatType():
+    dateFrom = datetime.datetime.strptime('2022-08-05', '%Y-%m-%d').date()
+    dateTo = datetime.date.today()
+    matchesList = []
+    for leagueId in fotmobData.leagueIdList:
+        matchesList.append(rdsConnector.rdsSelectMatches(dateFrom, dateTo, leagueId))
+
+    matchesList = [item for sublist in matchesList for item in sublist]
+    statsList = fotmobData.getAllStats(matchesList)
+    rdsConnector.rdsInsert(statsList, 'stats')
 
 def getBetsForDateRange(dateFrom, dateTo):
     try: 
@@ -39,8 +62,13 @@ def getBetsForDateRange(dateFrom, dateTo):
         matchesDf = matchesDf = pd.DataFrame(fotmobData.getFutureMatchesInDateRange(dateFrom, dateTo), columns = fotmobData.matchesCols).drop_duplicates()
         bets = []
         for index, row in matchesDf.iterrows():
-            bets.append(generateBets.generateBets(row))
+            bets.append(generateBets.generateResponseObject(row))
         return ({"matches": bets}, True)
     except Exception as e:
         print(f'Error - { str(e) }')
         return (f'Error', False)
+
+
+if __name__ == '__main__':
+    # refresh()
+    getBetsForToday()

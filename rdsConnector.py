@@ -2,6 +2,9 @@ import psycopg2
 import json
 import pandas as pd
 import postgresQueries
+import tqdm
+from itertools import repeat
+from concurrent.futures import ProcessPoolExecutor
 
 config = json.loads(open('config.json', 'r').read())
 
@@ -14,14 +17,15 @@ def rdsConnection():
         print("Database connection failed due to {}".format(e)) 
     return cur, conn
 
-def rdsInsert(df, type):
+def rdsInsert(insertList, type):
     cur, conn = rdsConnection()
-    print(f'Inserting {len(df)} {type}')
-    for line_number, (index, row) in enumerate(df.iterrows()):
-        query = postgresQueries.generateInsertQuery(type, row)
-        print(f'Inserting/Updating {type} {line_number+1} of {len(df)} - {round(100*(line_number + 1)/len(df),1)}% complete')
-        cur.execute(query)
-        conn.commit()
+    with tqdm.tqdm(total=len(insertList)) as pbar:
+        pbar.set_description(f"Inserting/Updating {len(insertList)} {type}", refresh=False)
+        with ProcessPoolExecutor(max_workers=24) as executor:
+            for r in executor.map(postgresQueries.generateInsertQuery, (insertList), repeat(type, len(insertList))):
+                cur.execute(r)
+                conn.commit()
+                pbar.update(1)
     cur.close()
     conn.close()
     print(f'Inserted/Updated all {type}')

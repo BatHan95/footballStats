@@ -64,7 +64,7 @@ def generateStatQuery(row, stat, queryType):
         }
     return queries[queryType]
 
-def generateInsertQuery(type, row):
+def generateInsertQuery(row, type):
     typeCols = ", ".join(typeDict[type]['cols'])
     indices = ", ".join(typeDict[type]['indices'])
     insertQuery = f"""

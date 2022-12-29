@@ -3,15 +3,18 @@ import requests
 import pandas as pd
 import datetime
 import math
+import tqdm
+from itertools import repeat
+from concurrent.futures import ProcessPoolExecutor
 
 baseUrl = 'https://www.fotmob.com/api'
 
 matchesCols = ['competitionId', 'matchId', 'homeTeamId', 'awayTeamId', 'matchDate', 'homeTeamPosition', 'awayTeamPosition', 'homeTeamName', 'awayTeamName']
 statsCols = ['matchId', 'teamId', 'statName', 'stat', 'homeOrAway', 'season']
 teamsCols = ['teamId', 'leagueId', 'teamName']
-relevantStats = ['Accurate crosses', 'Corners']
+relevantStats = ['Shots on target', 'Total shots', 'Accurate crosses', 'Corners']
 
-leagues = [{'name': 'Premier League', 'id': '47'}, {'name': 'LaLiga', 'id': '87'}, {'name': 'Ligue 1', 'id': '53'}, {'name': 'Championship', 'id': '48'}]
+leagues = [{'name': 'Premier League', 'id': '47'}, {'name': 'LaLiga', 'id': '87'}, {'name': 'Serie A', 'id': '55'}, {'name': 'Bundesliga', 'id': '54'}, {'name': 'Ligue 1', 'id': '53'}]
 
 leagueIdList = []
 for league in leagues:
@@ -64,7 +67,7 @@ def getMatchesByDate(date):
         competitionId = competition['primaryId']
         for match in competition['matches']:
             if (match['status']['finished'] == True) & (match['status']['cancelled'] == False) & (str(competitionId) in leagueIdList):
-                matchDate = datetime.datetime.strptime(match['time'], '%d.%m.%Y %H:%M').date()
+                matchDate = str(datetime.datetime.strptime(match['time'], '%d.%m.%Y %H:%M').date())
                 matchId = match['id']
                 homeTeamId = match['home']['id']
                 awayTeamId = match['away']['id']
@@ -75,7 +78,10 @@ def getMatchesByDate(date):
         return matchData
 
 
-def getMatchStats(matchId, homeTeamId, awayTeamId):
+def getMatchStats(inputRow):
+    matchId = str(inputRow[1])
+    homeTeamId = inputRow[2]
+    awayTeamId = inputRow[3]
     url = baseUrl + '/matchDetails?matchId=' + matchId
     r = requests.get(url)
     data = r.json()
@@ -99,16 +105,18 @@ def getMatchStats(matchId, homeTeamId, awayTeamId):
             return statsData
 
 
-def getAllStats(matchesDf):
+def getAllStats(matchesList):
     allStatsData = []
-    for line_number, (index, row) in enumerate(matchesDf.iterrows()):
-        print('getting stats for match ', f'{line_number+1} of {len(matchesDf)} - {round(100*(line_number + 1)/len(matchesDf),1)}% complete')
-        matchStatsData = getMatchStats(str(row['matchId']), row['homeTeamId'], row['awayTeamId'])
-        if matchStatsData != None:
-            allStatsData.append(matchStatsData)
-    allStatsDf = pd.DataFrame([item for sublist in allStatsData for item in sublist], columns = statsCols).drop_duplicates()
+
+    with tqdm.tqdm(total=len(matchesList)) as pbar:
+        pbar.set_description(f"Getting stats for {len(matchesList)} matches", refresh=False)
+        with ProcessPoolExecutor(max_workers=24) as executor:
+            for r in executor.map(getMatchStats, (matchesList)):
+                allStatsData.append(r)
+                pbar.update(1)
+    allStatsList = [item for sublist in allStatsData for item in sublist]
     if allStatsData != []:
-        return allStatsDf
+        return allStatsList
 
 # def getTeamNamesForMatches(matchesDf):
 #     teamsList = []
